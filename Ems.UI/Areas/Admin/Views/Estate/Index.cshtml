@@ -1,0 +1,280 @@
+﻿﻿@using Ems.BusinessLogic.Dtos
+@model AddEstateDto
+@{
+    ViewData["Title"] = "Index";
+}
+
+@section links {
+    <link href="~/AdminTemplates/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/AdminTemplates/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="~/AdminTemplates/css/style.css" rel="stylesheet">
+}
+
+<div class="container mt-4">
+    <button type="button" class="btn btn-primary float-end" data-bs-toggle="modal" data-bs-target="#estateFormModal">
+        Add Estate
+    </button>
+
+    <table class="table" id="estateTable">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Title</th>
+                <th>Area</th>
+                <th>Address</th>
+                <th>Price</th>
+                <th>Category</th>
+                <th>Image</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dynamic data will be loaded here via Ajax -->
+        </tbody>
+    </table>
+
+    <!-- Add Estate Modal -->
+    <div class="modal fade" id="estateFormModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addModalLabel">Add Property Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addEstateForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" asp-for="Title" required>
+                            <span class="text-danger" asp-validation-for="Title"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="area" class="form-label">Area (m²)</label>
+                            <input type="number" class="form-control" id="area" asp-for="Area" required>
+                            <span class="text-danger" asp-validation-for="Area"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="address" asp-for="Address" required>
+                            <span class="text-danger" asp-validation-for="Address"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Price</label>
+                            <input type="number" class="form-control" id="price" asp-for="Price" required>
+                            <span class="text-danger" asp-validation-for="Price"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="categoryId" class="form-label">Categories</label>
+                            <select class="form-select" id="categoryId" asp-for="CategoryId" asp-items='(SelectList)TempData["Categories"]' required></select>
+                            <span class="text-danger" asp-validation-for="CategoryId"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="imgFiles" class="form-label">Image</label>
+                            <input type="file" class="form-control" id="imgFiles" asp-for="UploadedFilesDtos" multiple required>
+                            <span class="text-danger" asp-validation-for="UploadedFilesDtos"></span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="submitButton">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Estate Modal -->
+    <div class="modal fade" id="estateEditModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Edit Property Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editEstateForm" enctype="multipart/form-data">
+                        <input type="hidden" id="estateId" name="Id">
+                        <div class="mb-3">
+                            <label for="editTitle" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="editTitle" name="Title" required>
+                            <span class="text-danger" id="editTitleError"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editArea" class="form-label">Area (m²)</label>
+                            <input type="number" class="form-control" id="editArea" name="Area" required>
+                            <span class="text-danger" id="editAreaError"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editAddress" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="editAddress" name="Address" required>
+                            <span class="text-danger" id="editAddressError"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPrice" class="form-label">Price</label>
+                            <input type="number" class="form-control" id="editPrice" name="Price" required>
+                            <span class="text-danger" id="editPriceError"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editCategoryId" class="form-label">Categories</label>
+                            <select class="form-select" id="editCategoryId" name="CategoryId" asp-items='(SelectList)TempData["Categories"]' required></select>
+                            <span class="text-danger" id="editCategoryError"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editImgFiles" class="form-label">Image</label>
+                            <input type="file" class="form-control" id="editImgFiles" name="UploadedFilesDtos" multiple>
+                            <span class="text-danger" id="editImageError"></span>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="updateButton">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        $(document).ready(function () {
+
+            function loadEstateData() {
+                $.ajax({
+                    url: '/Admin/Estate/GetEstate',
+                    type: 'GET',
+                    success: function (data) {
+                        var tableBody = $("#estateTable tbody");
+                        tableBody.empty();
+
+                        data.forEach(function (estate) {
+                            var row = `
+                                                <tr>
+                                                    <td>${estate.id}</td>
+                                                    <td>${estate.title}</td>
+                                                    <td>${estate.area}</td>
+                                                    <td>${estate.address}</td>
+                                                    <td>${estate.price}</td>
+                                                    <td>${estate.category}</td>
+                                                    <td><img src="${estate.image}" alt="alma" style="max-width: 50px; height: auto;" /></td>
+                                                    <td><button class="btn btn-success edit-estate" data-id="${estate.id}">Edit</button></td>
+                                                    <td><button class="btn btn-danger delete-estate" data-id="${estate.id}">Delete</button></td>
+                                                </tr>
+                                            `;
+                            tableBody.append(row);
+                        });
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Data load error: ", error);
+                    }
+                });
+            }
+
+
+            function handleFormSubmit(url, modalId, formData) {
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function (response) {
+                        if (response.success) {
+                            $(modalId).modal('hide');
+                            loadEstateData();
+                        } else {
+                            $.each(response.errors, function (key, messages) {
+                                var field = $("[name='" + key + "']");
+                                field.next(".text-danger").text(messages[0]);
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Form submit error: ", error);
+                    }
+                });
+            }
+
+
+            $("#submitButton").click(function () {
+                var formData = new FormData();
+                formData.append("Title", $("#title").val());
+                formData.append("Area", $("#area").val());
+                formData.append("Address", $("#address").val());
+                formData.append("Price", $("#price").val());
+                formData.append("CategoryId", $("#categoryId").val());
+
+                var files = $("#imgFiles")[0].files;
+                for (var i = 0; i < files.length; i++) {
+                    formData.append("UploadedFilesDtos", files[i]);
+                }
+
+                handleFormSubmit('/Admin/Estate/AddEstate', "#estateFormModal", formData);
+            });
+
+
+            $("#estateTable").on("click", ".delete-estate", function () {
+                var id = $(this).data("id");
+
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "You won't be able to revert this!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, delete it!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `/Admin/Estate/RemoveEstate/${id}`,
+                            type: 'DELETE',
+                            success: function (response) {
+                                if (response.success) {
+                                    Swal.fire("Deleted!", "Your estate has been deleted.", "success");
+                                    loadEstateData();
+                                } else {
+                                    Swal.fire({
+                                        icon: "error",
+                                        title: "Oops...",
+                                        text: response.message || "Something went wrong!",
+                                    });
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                console.error("Deletion error: ", error);
+                            }
+                        });
+                    }
+                });
+            });
+
+
+            $("#estateTable").on("click", ".edit-estate", function () {
+                var id = $(this).data("id");
+                var formData = new FormData();
+                formData.append("Id", id);
+                formData.append("Title", $("#editTitle").val());
+                formData.append("Area", $("#editArea").val());
+                formData.append("Address", $("#editAddress").val());
+                formData.append("Price", $("#editPrice").val());
+                formData.append("CategoryId", $("#editCategoryId").val());
+
+                var files = $("#editImgFiles")[0].files;
+                for (var i = 0; i < files.length; i++) {
+                    formData.append("UploadedFilesDtos", files[i]);
+                }
+
+
+                handleFormSubmit('/Admin/Estate/UpdateEstate', "#estateEditModal", formData);
+            });
+
+            loadEstateData();
+        });
+    </script>
+}
