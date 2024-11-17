@@ -8,9 +8,11 @@ using Ems.Core.Helpers;
 using Ems.Core.Wrappers.Concrete;
 using Ems.Core.Wrappers.Interfaces;
 using Ems.DataAccessLayer.Abstract;
+using Ems.DataAccessLayer.EntityFrameworkCore.Concrete;
 using Ems.Entity.Accounds;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using System.Security.Claims;
 
 namespace Ems.BusinessLogic.Concrete;
@@ -22,15 +24,16 @@ public class UserService : IUserService
     private readonly IValidator<SigninUserDto> _signinUserValidator;
     private readonly IMapper _mapper;
     private RegisterUserDto _registerUser;
+    private readonly IRoleRepository _roleRepository;
 
-    public UserService(IUserRepository userRepository, IUserDetailRepository userDetailRepository, IValidator<CreateUserDto> createUserValidator, IMapper mapper, IValidator<SigninUserDto> signinUserValidator)
+    public UserService(IUserRepository userRepository, IUserDetailRepository userDetailRepository, IValidator<CreateUserDto> createUserValidator, IMapper mapper, IValidator<SigninUserDto> signinUserValidator, IRoleRepository roleRepository)
     {
         _userRepository = userRepository;
         _userDetailRepository = userDetailRepository;
-        _createUserValidator = createUserValidator; 
+        _createUserValidator = createUserValidator;
         _signinUserValidator = signinUserValidator;
         _mapper = mapper;
-        
+        _roleRepository = roleRepository;
     }
 
 
@@ -68,6 +71,14 @@ public class UserService : IUserService
         var userEntity = _mapper.Map<User>(userDto);
         userEntity.UserDetail = _mapper.Map<UserDetail>(userDto);
 
+
+        var role = await _roleRepository.GetRoleByNameAsync(userDto.Role);
+        if (role == null) 
+        {
+            return new ResponseDataResult<RegisterUserDto>(
+                [new() { ErrorMessage = "Role not found", PropertyName = "Role" }]);
+        }
+
         byte[] passwordHash;
         byte[] passwordSalt;
 
@@ -76,10 +87,10 @@ public class UserService : IUserService
         userEntity.PassworHash = passwordHash.ByteToString();
         userEntity.UserDetail.ConfirmCode = CodeGenerator.GenerateConfirmCode();
         userEntity.UserDetail.StatusId = (int)RegisterStatusEnum.Register;
-        userEntity.UserRoles =
-            [
-                new() {RoleId = 3}
-            ];
+        userEntity.UserRoles = new List<UserRole>
+        {
+            new() { Role = role } 
+        };
 
         await _userRepository.AddAsync(userEntity);
         await _userRepository.SaveChangesAsync();
@@ -92,6 +103,8 @@ public class UserService : IUserService
             ConfirmCode = userEntity.UserDetail.ConfirmCode,
             FirstName = userEntity.UserDetail.FirstName,
             LastName = userEntity.UserDetail.LastName,
+            Role = string.Join(", ", userEntity.UserRoles.Select(ur => ur.Role.RoleName))
+
         });
 
     }
@@ -151,6 +164,10 @@ public class UserService : IUserService
                 [new() { ErrorMessage = "Password is incorrect", PropertyName = "Password" }]);
         }
 
+        var userRole = user.UserRoles.FirstOrDefault();
+        string roleName = userRole != null ? userRole.Role.RoleName : string.Empty;
+
+
         return new ResponseDataResult<RegisterUserDto>(ResponseType.SuccessResult, new RegisterUserDto()
         {
             Id = user.Id,
@@ -158,6 +175,7 @@ public class UserService : IUserService
             FirstName = user.UserDetail.FirstName,
             LastName = user.UserDetail.LastName,
             ConfirmCode = user.UserDetail.ConfirmCode,
+            Role = roleName,
         });
     }
 
@@ -176,19 +194,25 @@ public class UserService : IUserService
         var userId = claimsPrincipal.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.NameIdentifier));
         var firstName = claimsPrincipal.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.Name));
         var lastName = claimsPrincipal.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.Surname));
+        var roleName = claimsPrincipal.Claims.FirstOrDefault(c => c.Type.Equals(ClaimTypes.Role));
 
         _registerUser = new RegisterUserDto
         {
             Id = Convert.ToInt32(userId.Value),
             FirstName = firstName.Value.ToString(),
             LastName = lastName.Value,
+            Role = roleName.Value
         };
     }
 
 
-    public async Task<IResponseResult> UpdatePasswordAsync(IdentifyNewPassDto identifyNewPassDto)
+    public async Task<IResponseResult> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
     {
-        var user = await _userRepository.FindByEmailAsync(identifyNewPassDto.Email);
+
+        var user = await _userRepository
+            .GetWhereAsync(x => x.Email == resetPasswordDto.Email)
+            .FirstOrDefaultAsync();
+
         if (user == null)
         {
             return new ResponseResult(ResponseType.NotFound);
@@ -196,15 +220,36 @@ public class UserService : IUserService
 
         byte[] passwordHash;
         byte[] passwordSalt;
-        HashHelper.CreatePasswordHash(identifyNewPassDto.NewPassword, out passwordHash, out passwordSalt);
+        HashHelper.CreatePasswordHash(resetPasswordDto.NewPassword, out passwordHash, out passwordSalt);
 
         user.PassworHash = passwordHash.ByteToString();
         user.PasswordSalt = passwordSalt.ByteToString();
 
+        await _userRepository.SaveChangesAsync();
 
-        _userRepository.Update(user);
+        return new ResponseResult(ResponseType.SuccessResult);
+    }
 
-        var resultDto = _mapper.Map<RegisterUserDto>(user);
+
+    public async Task<IResponseResult> AssignRoleToUserAsync(string userId, string role)
+    {
+        var user = await _userRepository.GetByIdAsync(int.Parse(userId));
+        if (user == null)
+        {
+            return new ResponseResult(ResponseType.NotFound);
+        }
+
+        var roleEntity = await _roleRepository.GetWhereAsync(r => r.RoleName == role).FirstOrDefaultAsync();
+        if (roleEntity == null)
+        {
+            return new ResponseResult(ResponseType.NotFound);
+        }
+
+        user.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = roleEntity.Id });
+
+        await _userRepository.SaveChangesAsync();
+
         return new ResponseResult(ResponseType.SuccessResult);
     }
 }
+

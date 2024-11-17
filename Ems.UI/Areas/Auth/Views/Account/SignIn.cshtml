@@ -135,7 +135,7 @@
                     data: JSON.stringify(model),
                     success: function (response) {
                         if (response.success) {
-                            window.location.href = "/Admin/Estate/Index"
+                            window.location.href = response.redirectUrl; 
                         } else {
                             $("div.text-danger").text("");
                             $.each(response.errors, function (key, messages) {

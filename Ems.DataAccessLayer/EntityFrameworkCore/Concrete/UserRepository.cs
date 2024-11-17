@@ -22,6 +22,7 @@ public class UserRepository : GenericRepository<User>, IUserRepository
         return _emsContext.Users
             .Include(x => x.UserDetail)
             .Include(x => x.UserRoles)
+            .ThenInclude(x => x.Role)
             .Where(x => x.Email == email)
             .FirstOrDefaultAsync();
     }

@@ -34,6 +34,8 @@ builder.Services.Configure<FormOptions>(options =>
 
 builder.Services.AddTransient<IEmailService, EmailService>();
 
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserDetailRepository, UserDetailRepository>();

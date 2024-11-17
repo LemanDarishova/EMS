@@ -19,5 +19,7 @@ public interface IUserService
 
     void SetRegisterUser(ClaimsPrincipal claimsPrincipal);
     RegisterUserDto GetRegisterUserDto();
-    Task<IResponseResult> UpdatePasswordAsync(IdentifyNewPassDto identifyNewPassDto);
+    Task<IResponseResult> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
+
+    Task<IResponseResult> AssignRoleToUserAsync(string userId, string role);
 }

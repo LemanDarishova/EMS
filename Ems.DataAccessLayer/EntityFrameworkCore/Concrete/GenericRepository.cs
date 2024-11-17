@@ -86,9 +86,4 @@ public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
         return await EmsEntity.ToDictionaryAsync(keySelector, valueSelector);
     }
 
-    public async Task<T> FindByEmailAsync(string email)
-    {
-        return await EmsEntity.FindAsync(email);
-    }
-
 }

@@ -71,7 +71,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="imgFiles" class="form-label">Image</label>
-                            <input type="file" class="form-control" id="imgFiles" asp-for="UploadedFilesDtos" multiple required>
+                            <input type="file" class="form-control" id="imgFiles" asp-for="UploadedFilesDtos" multiple>
                             <span class="text-danger" asp-validation-for="UploadedFilesDtos"></span>
                         </div>
                     </form>
@@ -161,16 +161,13 @@
                                                     <td>${estate.address}</td>
                                                     <td>${estate.price}</td>
                                                     <td>${estate.category}</td>
-                                                    <td><img src="${estate.image}" alt="alma" style="max-width: 50px; height: auto;" /></td>
+                                                    <td><img src="${estate.Image}" alt="alma" style="max-width: 50px; height: auto;" /></td>
                                                     <td><button class="btn btn-success edit-estate" data-id="${estate.id}">Edit</button></td>
                                                     <td><button class="btn btn-danger delete-estate" data-id="${estate.id}">Delete</button></td>
                                                 </tr>
                                             `;
                             tableBody.append(row);
                         });
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Data load error: ", error);
                     }
                 });
             }
@@ -189,7 +186,7 @@
                             loadEstateData();
                         } else {
                             $.each(response.errors, function (key, messages) {
-                                var field = $("[name='" + key + "']");
+                                var field = $("[asp-for='" + key + "']");
                                 field.next(".text-danger").text(messages[0]);
                             });
                         }

@@ -14,6 +14,6 @@ public class GetEstateViewDto
     public int Area { get; set; }
     public string Address { get; set; }
     public int Price { get; set; }
-    public IFormFile Image { get; set; }
+    public string Image { get; set; }
     public string Category { get; set; }
 }

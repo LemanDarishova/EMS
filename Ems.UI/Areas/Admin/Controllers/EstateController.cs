@@ -41,7 +41,7 @@ namespace Ems.UI.Areas.Admin.Controllers
             
             estateDto.UploadedFilesDtos = new List<UploadedFileDto>();
 
-            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
+            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "Uploads");
             if (Directory.Exists(uploadsFolder) is false)
             {
                 Directory.CreateDirectory(uploadsFolder);
@@ -63,7 +63,7 @@ namespace Ems.UI.Areas.Admin.Controllers
                     {
                         FileName = uniqueImageName,
                         ContentType = img.ContentType,
-                        RelativePath = "/uploads/" + uniqueImageName,
+                        RelativePath = "/Uploads/" + uniqueImageName,
                     });
                 }
             }
@@ -89,19 +89,20 @@ namespace Ems.UI.Areas.Admin.Controllers
 
             return RedirectToAction("Index", "Estate");
         }
-
+        
 
 
         [HttpGet]
         [Authorize(Roles = "Property owner")]
         public async Task<IActionResult> GetEstate()
         {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+
             var result = await _estateService.GetAllAsync();
-            foreach (var estate in result.Data)
-            {
-                Console.WriteLine($"Image Path: {estate.Image}");
-            }
-            return Json(result.Data);
+            var userEstates = result.Data.Where(e => e.Id == userId).ToList();
+
+            return Json(userEstates);
         }
 
 

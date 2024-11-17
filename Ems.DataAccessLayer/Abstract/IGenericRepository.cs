@@ -20,7 +20,6 @@ public interface IGenericRepository<T> where T : BaseEntity
     bool Remove(T entity);
 
     Task<IDictionary<TKey, TElement>> GetDictionaryAsync<TKey, TElement>(Func<T, TKey> keySelector, Func<T, TElement> valueSelector);
-    Task<T> FindByEmailAsync(string email);
 
 
 }

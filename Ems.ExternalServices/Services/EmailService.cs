@@ -6,47 +6,55 @@ using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
 
-namespace Ems.ExternalServices.Services
+namespace Ems.ExternalServices.Services;
+
+public class EmailService : IEmailService
 {
-    public class EmailService : IEmailService
+    public readonly SmtpSetting _smtpSetting;
+
+    public EmailService(IOptions<SmtpSetting> smtpSetting)
     {
-        public readonly SmtpSetting _smtpSetting;
+        _smtpSetting = smtpSetting.Value;
+    }
 
-        public EmailService(IOptions<SmtpSetting> smtpSetting)
+    public async Task SendEmailAsync(string toEmail, string subject, string message)
+    {
+        try
         {
-            _smtpSetting = smtpSetting.Value;
-        }
+            var mailMessage = new MailMessage
+            {
+                From = new MailAddress(_smtpSetting.SenderEmail, _smtpSetting.SenderName),
+                Subject = subject,
+                Body = message,
+                IsBodyHtml = true
+            };
 
-        public async Task SendEmailAsync(string toEmail, string subject, string message)
+            mailMessage.To.Add(toEmail);
+            var smtpClient = new SmtpClient(_smtpSetting.Server, _smtpSetting.Port)
+            {
+                EnableSsl = _smtpSetting.EnableSsl,
+                Credentials = new NetworkCredential(_smtpSetting.SenderEmail, _smtpSetting.Password)
+            };
+
+            await smtpClient.SendMailAsync(mailMessage);
+        }
+        catch (SmtpException smtpEx)
         {
-            try
-            {
-                var mailMessage = new MailMessage
-                {
-                    From = new MailAddress(_smtpSetting.SenderEmail, _smtpSetting.SenderName),
-                    Subject = subject,
-                    Body = message,
-                    IsBodyHtml = true
-                };
-
-                mailMessage.To.Add(toEmail);
-                var smtpClient = new SmtpClient(_smtpSetting.Server, _smtpSetting.Port)
-                {
-                    EnableSsl = _smtpSetting.EnableSsl,
-                    Credentials = new NetworkCredential(_smtpSetting.SenderEmail, _smtpSetting.Password)
-                };
-
-                await smtpClient.SendMailAsync(mailMessage);
-            }
-            catch (SmtpException smtpEx)
-            {
-                
-                throw new InvalidOperationException($"SMTP səhvi: {smtpEx.Message}", smtpEx);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException("Could not send email", ex);
-            }
+            
+            throw new InvalidOperationException($"SMTP səhvi: {smtpEx.Message}", smtpEx);
         }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Could not send email", ex);
+        }
+    }
+
+    public async Task SendPasswordResetEmailAsync(string email, string resetLink)
+    {
+        var subject = "Parol Sıfırlama";
+        var message = $"Parolunuzu sıfırlamaq üçün aşağıdakı linkə klikləyin: <a href='{resetLink}'>Sıfırla</a>";
+
+        await SendEmailAsync(email, subject, message); // E-poçt göndərmək üçün mövcud metodu çağırın
+
     }
 }

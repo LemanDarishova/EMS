@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Ems.BusinessLogic.Dtos;
+using Ems.DataAccessLayer.EntityFrameworkCore.Concrete;
 using Ems.Entity.Accounds;
 using Ems.Entity.Commons;
 using Ems.Entity.Estates;
@@ -10,16 +11,15 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Ems.BusinessLogic.Mappers;
-public class MapProfile : Profile
+public class MapProfile : Profile 
 {
     public MapProfile()
     {
-        CreateMap<CreateUserDto, User>();
         CreateMap<CreateUserDto, UserDetail>();
         CreateMap<AddEstateDto, Estate>();
         CreateMap<UploadedFileDto, UploadedFile>();
-
-
+        CreateMap<ResetPasswordDto, User>();
+        CreateMap<ResetPasswordDto, UserDetail>();
         CreateMap<Estate, GetEstateViewDto>()
             .ForMember(
                 dest => dest.Category,
@@ -27,13 +27,17 @@ public class MapProfile : Profile
             )
             .ForMember(
                 dest => dest.Image,
-                opt => opt.MapFrom(x => x.UploadedFiles != null && x.UploadedFiles.Any()
-                ?   x.UploadedFiles.FirstOrDefault().RelativePath
-                :null)
+                opt => opt.MapFrom(x => x.UploadedFiles.FirstOrDefault().FileName)
             );
 
-        CreateMap<IdentifyNewPassDto, User>();
-        CreateMap<IdentifyNewPassDto, UserDetail>();
+        CreateMap <CreateUserDto, User> ()
+            .ForMember(dest => dest.UserRoles, opt => opt.MapFrom(src => new List<UserRole>
+            {
+                new UserRole
+                {
+                    Role = new Role { RoleName = src.Role }
+                }
+            }));
 
     }
 }

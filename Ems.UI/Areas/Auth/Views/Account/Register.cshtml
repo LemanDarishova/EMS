@@ -1,4 +1,6 @@
 ﻿﻿@using Ems.BusinessLogic.Dtos;
+@using Ems.Entity.Accounds;
+
 @model CreateUserDto
 <html lang="en">
     <head>
@@ -81,6 +83,30 @@
                       <div asp-validation-for="Password" class="text-danger"></div>
                     </div>
 
+                    <div class="form-group">
+                       <label for="role"></label>
+                       <select for="role" class="form-control" id="role">
+                         <option value="">Select Role</option>
+                         @{
+                            var roles = ViewBag.Roles as List<Role>; // ViewBag.Roles-u List<Role> tipinə çevirin
+                             if (roles != null && roles.Any())
+                             {
+                                foreach (var role in roles)
+                                {
+                                  if (role != null && !string.IsNullOrEmpty(role.RoleName))
+                                  {
+                                  <option value="@role.RoleName">@role.RoleName</option>
+                                  }
+                                }
+                             }
+                             else
+                             {
+                                 <option value="">No roles available</option>
+                             }
+                         }
+                       </select>
+                    </div>
+
                     <div class="col-12">
                       <button class="btn btn-primary w-100" type="submit" id="btn-register">Register</button>
                     </div>
@@ -126,7 +152,8 @@
                     FirstName: $("#first-name").val(),
                     LastName: $("#last-name").val(),
                     Email: $("#user-mail").val(),
-                    Password: $("#password").val()
+                    Password: $("#password").val(),
+                    Role: $("#role").val()
                 };
 
                 $.ajax({

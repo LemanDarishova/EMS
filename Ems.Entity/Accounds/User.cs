@@ -12,9 +12,9 @@ public class User : BaseEntity
 {
     public User()
     {
-        UserRoles = [];
-        UploadedFiles = [];
-        Estates = [];
+        UserRoles = new List<UserRole>();
+        UploadedFiles = new List<UploadedFile>();
+        Estates = new List<Estate>();
     }
     public string Email { get; set; }
     public string PassworHash { get; set; }

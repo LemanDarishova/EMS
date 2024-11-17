@@ -9,4 +9,5 @@ namespace Ems.DataAccessLayer.Abstract;
 
 public interface IRoleRepository : IGenericRepository<Role>
 {
+    Task<Role> GetRoleByNameAsync(string roleName);
 }
